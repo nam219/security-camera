@@ -11,4 +11,4 @@ Software for security monitoring with single or multiple cameras with:
 ## Notes
 - In order to use python scripts, must use the 'cv' workspace (workon cv) as all python requirements are installed there.
 - Run basic camera stream using 'bash launch.sh'. Does not need cv workspace. 
--- Must change device in file to represent what it is used as.
+  - Must change device in file to represent what it is used as.
