@@ -1,5 +1,5 @@
 import smtplib, time, os
-os.environ['TZ']= 'Asia/Kolkata'
+os.environ['TZ']= 'America/New_York'
 time.tzset()
 
 with open('confidential.txt','r') as f:
