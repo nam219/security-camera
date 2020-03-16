@@ -8,5 +8,5 @@ connect_th=15
 motion_threshold=25
 initial_sleep=3
 send_time_threshold=-1 #no threshold
-location='Asia/Kolkata'
+location='America/New_York'
 usbcam=False #if false, CSI camera is assumed
