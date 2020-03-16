@@ -1,14 +1,27 @@
 # Introduction
 
 Software for security monitoring with single or multiple cameras with:
-- Raspberry Pi
+- Raspberry Pi 4
 - Jetson Nano
 
 ## Functions
-- Raspberry Pi: Records video and sends it to a local network stream.
-- Jetson Nano: Reads data from stream then processes it for motion and object/face recognition.  Can also be used as a camera.
+- Raspberry Pi: Records video and sends it to a local network stream.  
+- Jetson Nano: Reads data from stream then processes it for motion and object/face recognition.  
+  - Can also be used as a camera that works the same as a Raspberry Pi.
 
 ## Notes
-- In order to use python scripts, must use the 'cv' workspace (workon cv) as all python requirements are installed there.
-- Run basic camera stream using 'bash launch.sh'. Does not need cv workspace. 
-  - Must change device in file to represent what it is used as.
+- Pretty much any device can take the place of the Raspberry Pi as long as it can use PiCamera.
+
+```Shell
+sudo apt-get update
+sudo apt-get install python-picamera python3-picamera
+```
+
+- Run the script in the launch folder corresponding to the device to begin.
+```Shell
+bash launchPi.sh
+```
+or
+```Shell
+bash launchJetson.sh
+```
