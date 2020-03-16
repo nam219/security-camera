@@ -1,46 +1,20 @@
-from ctypes import *
 import cv2
 import numpy as np
+
 import sys
 import time
 import logging
 import datetime
-import math
-import random
-import os
-import darknet
-import re
+
+import numpy as np
+import cv2
+import tensorflow as tf
+import tensorflow.contrib.tensorrt as trt
+
+from utils.od_utils import read_label_map, load_trt_pb, detect
+from utils.visualization import BBoxVisualization
 from streamutils import VideoStreamHandler
-from xavier_config import threaded, WINDOW_NAME, BBOX_COLOR, configPath, weightPath, metaPath
-
-def convertBack(x, y, w, h):
-    xmin = int(round(x - (w / 2)))
-    xmax = int(round(x + (w / 2)))
-    ymin = int(round(y - (h / 2)))
-    ymax = int(round(y + (h / 2)))
-    return xmin, ymin, xmax, ymax
-
-
-def cvDrawBoxes(detections, img,scale=(1.0,1.0)):
-    for detection in detections:
-        x, y, w, h = detection[2][0],\
-            detection[2][1],\
-            detection[2][2],\
-            detection[2][3]
-        xmin, ymin, xmax, ymax = convertBack(
-            float(x), float(y), float(w), float(h))
-
-        pt1 = (int(scale[0]*xmin), int(scale[1]*ymin))
-        pt2 = (int(scale[0]*xmax), int(scale[1]*ymax))
-
-        cv2.rectangle(img, pt1, pt2, (0, 255, 0), 1)
-        cv2.putText(img,
-                    detection[0].decode() +
-                    " [" + str(round(detection[1] * 100, 2)) + "]",
-                    (pt1[0], pt1[1] - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                    [0, 255, 0], 2)
-
-    return img
+from nano_config import threaded, MODEL, LABELMAP, WINDOW_NAME, BBOX_COLOR
 
 def draw_help_and_fps(img, fps):
     """Draw help message and fps number at top-left corner of the image."""
@@ -68,49 +42,43 @@ def set_full_screen(full_scrn):
     prop = cv2.WINDOW_FULLSCREEN if full_scrn else cv2.WINDOW_NORMAL
     cv2.setWindowProperty(WINDOW_NAME, cv2.WND_PROP_FULLSCREEN, prop)
 
-def loop_and_detect(stream_handler, conf_th):
+
+def show_bounding_boxes(img, box, conf, cls, cls_dict):
+    """Draw detected bounding boxes on the original image."""
+    font = cv2.FONT_HERSHEY_DUPLEX
+    for bb, cf, cl in zip(box, conf, cls):
+        cl = int(cl)
+        y_min, x_min, y_max, x_max = bb[0], bb[1], bb[2], bb[3]
+        cv2.rectangle(img, (x_min, y_min), (x_max, y_max), BBOX_COLOR, 2)
+        txt_loc = (max(x_min, 5), max(y_min-3, 20))
+        cls_name = cls_dict.get(cl, 'CLASS{}'.format(cl))
+        txt = '{} {:.2f}'.format(cls_name, cf)
+        cv2.putText(img, txt, txt_loc, font, 0.8, BBOX_COLOR, 1)
+    return img
+
+def loop_and_detect(stream_handler, tf_sess, conf_th, vis, od_type):
     """Loop, grab images from camera, and do object detection.
 
     # Arguments
       stream_handler: the stream handler object.
+      tf_sess: TensorFlow/TensorRT session to run SSD object detection.
       conf_th: confidence/score threshold for object detection.
+      vis: for visualization.
     """
     show_fps = True
     full_scrn = True
     fps = 0.0
-
-    netMain = darknet.load_net_custom(configPath.encode(
-            "ascii"), weightPath.encode("ascii"), 0, 1)  # batch size = 1
-
-    metaMain = darknet.load_meta(metaPath.encode("ascii"))
-
     tic = time.time()
-    img=stream_handler.read_streams()
-
-    darknet_image = darknet.make_image(darknet.network_width(netMain),
-                                    darknet.network_height(netMain),3)
-    
-    scale=(float(img.shape[1])/darknet.network_width(netMain),\
-        float(img.shape[0])/darknet.network_height(netMain))
-
     while True:
         if cv2.getWindowProperty(WINDOW_NAME, 0) < 0:
             # Check to see if the user has closed the display window.
             # If yes, terminate the while loop.
             break
 
-        frame_read = stream_handler.read_streams()
-        frame_rgb=frame_read[:,:,::-1]
-        frame_resized = cv2.resize(frame_rgb,
-                                   (darknet.network_width(netMain),
-                                    darknet.network_height(netMain)),
-                                   interpolation=cv2.INTER_LINEAR)
-        
-        darknet.copy_image_from_bytes(darknet_image,frame_resized.tobytes())
-        detections = darknet.detect_image(netMain, metaMain, darknet_image, thresh=conf_th)
-        
-        img = cvDrawBoxes(detections, frame_read, scale)
-    
+        img = stream_handler.read_streams()
+        box, conf, cls = detect(img, tf_sess, conf_th, od_type=od_type)
+        cls-=1
+        img = vis.draw_bboxes(img, box, conf, cls)
         if show_fps:
             img = draw_help_and_fps(img, fps)
         cv2.imshow(WINDOW_NAME, img)
@@ -137,6 +105,13 @@ def main():
     # duplicated logging)
     logging.getLogger('tensorflow').propagate = False
 
+    # build the class (index/name) dictionary from labelmap file
+    logger.info('reading label map')
+    cls_dict = read_label_map(LABELMAP)
+
+    pb_path = './human_detection/{}_trt.pb'.format(MODEL)
+    log_path = './jetsontx2/logs/{}_trt'.format(MODEL)
+
     logger.info('opening camera device/file')
 
     url1='http://pi1.local:8000/stream.mjpg'
@@ -145,14 +120,29 @@ def main():
     url4='http://pi4.local:8000/stream.mjpg'
     
     stream_handler=VideoStreamHandler([url1,url2,url3,url4],threaded=threaded,resolution=(360,640))
-    time.sleep(5)
+
+    logger.info('loading TRT graph from pb: %s' % pb_path)
+    trt_graph = load_trt_pb(pb_path)
+
+    logger.info('starting up TensorFlow session')
+    tf_config = tf.ConfigProto()
+    tf_config.gpu_options.allow_growth = True
+    tf_sess = tf.Session(config=tf_config, graph=trt_graph)
+
+    logger.info('warming up the TRT graph with a dummy image')
+    od_type = 'ssd'
+    dummy_img = np.zeros((720, 1280, 3), dtype=np.uint8)
+    _, _, _ = detect(dummy_img, tf_sess, conf_th=.3, od_type=od_type)
+
     # grab image and do object detection (until stopped by user)
     logger.info('starting to loop and detect')
+    vis = BBoxVisualization(cls_dict)
     open_display_window(1280, 720)
-    loop_and_detect(stream_handler, 0.2)
+    loop_and_detect(stream_handler, tf_sess, 0.2, vis, od_type=od_type)
     if threaded:
         stream_handler.close()
     logger.info('cleaning up')
+    tf_sess.close()
     stream_handler.join_streams()
     cv2.destroyAllWindows()
 

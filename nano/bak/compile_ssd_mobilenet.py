@@ -1,6 +1,10 @@
-import tensorflow.contrib.tensorrt as trt
+#from tensorflow.python.compiler.tensorrt import trt
+import tensorrt as trt
+#import tensorflow.contrib.tensorrt as trt
+#from tf_trt_models.tf_trt_models.detection import download_detection_model
+#from tf_trt_models.tf_trt_models.detection import download_detection_model
 from tf_trt_models.detection import build_detection_graph
-from tx2_config import MODEL, DATA_DIR, CONFIG_FILE, CHECKPOINT_FILE, SERIAL_FILE
+from nano_config import MODEL, DATA_DIR, CONFIG_FILE, CHECKPOINT_FILE, SERIAL_FILE
 from common.colors import cprint
 
 cprint('Freezing tensorflow graph...','blue')
