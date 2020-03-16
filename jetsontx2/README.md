@@ -1,10 +1,10 @@
-It is expected that your Jetson TX2 already has `numpy` and `opencv` installed.
-Install the official tensorflow release for Jetson TX2 by following the instructions from [here](https://devtalk.nvidia.com/default/topic/1038957/jetson-tx2/tensorflow-for-jetson-tx2-/).
+If you do not use the official OS for the Nano, `numpy` and `opencv` need to be installed. 
+Install the official tensorflow release for Jetson Nano by following the instructions from [here](https://docs.nvidia.com/deeplearning/frameworks/install-tf-jetson-platform/index.html).
 
 
-When running inference on TX2 for the first time, You will have to compile the MobileNet SSD model for your version of tensorflow and JetPack. To do so, launch the `compile_ssd_mobilenet.py` script from project directory.
+When running inference on the Nano for the first time, You need to run the `compile_ssd_mobilenet.py` script from your project directory.
 
 ```Shell
-cd homesecurity/ #cd to project directory
-python3 jetsontx2/compile_ssd_mobilenet.py
+cd project_directory
+python3 compile_ssd_mobilenet.py
 ```
