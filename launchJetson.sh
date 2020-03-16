@@ -3,7 +3,7 @@
 
 BASEDIR=$(pwd)
 
-DEVICE="streampi"
+DEVICE="jetsontx2"
 #OPTIONS: 'raspi3','jetsonano','streampi','jetsontx2', 'xavier'
 #In principle, the device streampi can be anything,
 #but, a pi zero is most commonly used.
