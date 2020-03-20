@@ -7,7 +7,6 @@ Software for security monitoring with single or multiple cameras with:
 ## Functions
 - Raspberry Pi: Motion activated camera. Saves video to disk for processing.
 - Jetson Nano: Reads data from disk then processes it for object/face recognition.  
-  -
 
 ## Installation
 - TODO
