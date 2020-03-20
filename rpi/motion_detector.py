@@ -1,5 +1,5 @@
 import io
-import random, math, operator
+#import random, math, operator
 import picamera
 from PIL import Image
 import imagehash
@@ -8,7 +8,7 @@ from functools import reduce
 
 
 prior_image = None
-def detect_motion(camera):
+def detect_motion(camera, cutoff):
     global prior_image
     stream = io.BytesIO()
     camera.capture(stream, format='jpeg', use_video_port=True)
@@ -27,7 +27,7 @@ def detect_motion(camera):
             return True'''
         hash0 = imagehash.average_hash(prior_image)
         hash1 = imagehash.average_hash(current_image)
-        cutoff = 5
+        #cutoff = 5
 
         if hash0 - hash1 > cutoff:
           print('movement')
@@ -47,7 +47,7 @@ with picamera.PiCamera() as camera:
     try:
         while True:
             camera.wait_recording(1)
-            if detect_motion(camera):
+            if detect_motion(camera, 5):
                 print('Motion detected!')
                 # As soon as we detect motion, split the recording to
                 # record the frames "after" motion
@@ -57,7 +57,7 @@ with picamera.PiCamera() as camera:
                 stream.clear()'''
                 # Wait until motion is no longer detected, then split
                 # recording back to the in-memory circular buffer
-                while detect_motion(camera):
+                while detect_motion(camera, 4):
                     camera.wait_recording(1)
                 print('Motion stopped!')
                 #camera.split_recording(stream)
