@@ -45,12 +45,7 @@ def crate_final_loc_string(path, fnum):
 def combine_recordings(path, num):
     before = path + '/' + 'before.h264'
     after = path + '/' + 'after.h264'
-    #tired and dont feel like coming up with a good name
-    afsdjlk = 'concat:{0}|{1}'.format(before, after)
+    concat_string = 'concat:{0}|{1}'.format(before, after)
     combined = path + str(num) + '.h264'
-    '''ff = FFmpeg(
-        inputs={before : None, after : None},
-        outputs={combined : '-c copy'}
-    )'''
-    os.system("ffmpeg -i \"{0}\" -c copy {1}".format(afsdjlk, combined))
+    os.system("ffmpeg -i \"{0}\" -c copy {1}".format(concat_string, combined))
     os.system('rm {0} {1}'.format(before, after))
