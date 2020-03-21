@@ -1,15 +1,13 @@
 import io
-#import random, math, operator
 import picamera
 from PIL import Image
 import imagehash
-from functools import reduce
 import os
-from rpi.support_functions import *
+from support_functions import *
 
 
 prior_image = None
-def detect_motion(camera, cutoff):
+def detect_motion(camera, cutoff, base_image):
     global prior_image
     stream = io.BytesIO()
     camera.capture(stream, format='jpeg', use_video_port=True)
@@ -20,18 +18,17 @@ def detect_motion(camera, cutoff):
     else:
         current_image = Image.open(stream)
         # Compare current_image to prior_image to detect motion.
-        '''h1 = prior_image.histogram()
-        h2 = current_image.histogram()
-        rms = math.sqrt(reduce(operator.add, map(lambda a,b: (a-b)**2, h1, h2))/len(h1))
-        if rms > 50:
-            print(rms)
-            return True'''
-        hash0 = imagehash.average_hash(prior_image)
-        hash1 = imagehash.average_hash(current_image)
+        #hash0 = imagehash.average_hash(prior_image)
+        current_hash = imagehash.average_hash(current_image)
+        base_hash = imagehash.average_hash(base_image)
         #cutoff = 5
 
-        if hash0 - hash1 > cutoff:
-          print('movement')
+        """ if hash1 - base_hash < cutoff:
+            print("ending")
+            return False """
+
+        if base_hash - current_hash > cutoff:
+          print('movement, ' + str(base_hash) + ', ' + str(current_hash) + ', ' + str(base_hash-current_hash))
           return True
 
 
@@ -42,33 +39,52 @@ def detect_motion(camera, cutoff):
         return False
 
 with picamera.PiCamera() as camera:
-    camera.resolution = (1280, 720)
+    print('Starting camera...')
+    camera.resolution = (1080, 720)
+    #camera.framerate = 60
+    camera.rotation = 180
     stream = picamera.PiCameraCircularIO(camera, seconds=10)
     camera.start_recording(stream, format='h264')
+    #give camera some time to warm up
+    #can be simplified but this makes it seem somethings happening.
+    print('Warming up camera.')
+    time.sleep(1)
+    print('Camera started.')
+    time.sleep(1)
     try:
+        print('Beginning motion detection.')
+        base_image = create_base_image(camera)
         while True:
-            camera.wait_recording(1)
-            if detect_motion(camera, 5):
+            camera.wait_recording(1)    
+            if detect_motion(camera, 5, base_image):
                 print('Motion detected!')
-                path = '/media/pi/SG1TB/recordings/'
-                filename = create_file_name()
-                make_folder(path, filename)
-
+                #base path of videos
+                path = '/media/pi/SG1TB/videos/'
+                #create the name of the folder for the current day
+                foldername = create_folder_name(datetime.datetime.now())
+                #make folder if it does not already exist - path/date folder
+                didmake, fpath = make_folder(path, foldername)
+                if not didmake:
+                    print('Error creating folder!')
+                    continue
+                filenum = create_file_location(fpath)
+                #create location string to save videos
+                writepath = crate_final_loc_string(fpath, filenum)
                 # As soon as we detect motion, split the recording to
                 # record the frames "after" motion
-                camera.split_recording(filename + '-' + 'after.h264')
+                camera.split_recording(writepath + 'after.h264')
                 # Write the 10 seconds "before" motion to disk as well
-                stream.copy_to(filename + '-' + 'before.h264')
+                stream.copy_to(writepath + 'before.h264')
                 stream.clear()
 
                 # Wait until motion is no longer detected, then split
                 # recording back to the in-memory circular buffer
                 #uses a lower threshold for motion so that it doesn't cut off early.
-                while detect_motion(camera, 4):
-                    camera.wait_recording(2)
-
+                while detect_motion(camera, 4, base_image):
+                    camera.wait_recording(1)
                 print('Motion stopped!')
                 camera.split_recording(stream)
+                combine_recordings(writepath, filenum)
     #not really necessary but I hate the errors on exit. might change to catch specific exit keys.
     except KeyboardInterrupt:
         camera.stop_recording()
