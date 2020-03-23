@@ -41,7 +41,9 @@ def create_base_image(camera):
 def crate_final_loc_string(path, fnum):
     ret = path + '/' + fnum + '/'
     return ret
-
+def convert_to_mp4(name, num):
+    os.system("ffmpeg -i {0} -c {1}.mp4".format(name, num))
+    
 def combine_recordings(path, num):
     before = path + '/' + 'before.h264'
     after = path + '/' + 'after.h264'
@@ -49,3 +51,6 @@ def combine_recordings(path, num):
     combined = path + str(num) + '.h264'
     os.system("ffmpeg -i \"{0}\" -c copy {1}".format(concat_string, combined))
     os.system('rm {0} {1}'.format(before, after))
+    convert_to_mp4(combined, num)
+
+

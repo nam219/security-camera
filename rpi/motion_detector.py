@@ -40,7 +40,7 @@ def detect_motion(camera, cutoff, base_image):
 
 with picamera.PiCamera() as camera:
     print('Starting camera...')
-    camera.resolution = (1080, 720)
+    camera.resolution = (640, 480)
     #camera.framerate = 60
     camera.rotation = 180
     stream = picamera.PiCameraCircularIO(camera, seconds=10)
@@ -80,6 +80,7 @@ with picamera.PiCamera() as camera:
                 # Wait until motion is no longer detected, then split
                 # recording back to the in-memory circular buffer
                 #uses a lower threshold for motion so that it doesn't cut off early.
+                motion_count=0
                 while detect_motion(camera, 4, base_image):
                     camera.wait_recording(1)
                 print('Motion stopped!')
