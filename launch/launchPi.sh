@@ -1,5 +1,5 @@
 
 #!/bin/bash
 
-cd common/
-python3 stream_video.py
+echo 'Starting Raspberry Pi Camera System.'
+python3 ../rpi/motion_dector.py
