@@ -65,7 +65,8 @@ for x, y in enumerate(sys.argv[2:]):
 
 #	for detection in detections:
 #		print(detection)
-	path = "./temp/frame%05d.png" % x
+	pathEnding = y[-13:]
+	path = "./temp/%s" % pathEnding
 	jetson.utils.saveImageRGBA(path, img, width, height)	
 
 # print out timing info
