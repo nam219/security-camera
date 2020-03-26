@@ -2,7 +2,7 @@ import io
 import picamera
 from PIL import Image
 import imagehash
-import os
+import os, subprocess
 from support_functions import *
 
 
@@ -41,9 +41,9 @@ def detect_motion(camera, cutoff, base_image):
 with picamera.PiCamera() as camera:
     print('Starting camera...')
     camera.resolution = (640, 480)
-    #camera.framerate = 60
+    camera.framerate = 25
     camera.rotation = 180
-    stream = picamera.PiCameraCircularIO(camera, seconds=10)
+    stream = picamera.PiCameraCircularIO(camera, seconds=5)
     camera.start_recording(stream, format='h264')
     #give camera some time to warm up
     #can be simplified but this makes it seem somethings happening.
@@ -73,7 +73,7 @@ with picamera.PiCamera() as camera:
                 # As soon as we detect motion, split the recording to
                 # record the frames "after" motion
                 camera.split_recording(writepath + 'after.h264')
-                # Write the 10 seconds "before" motion to disk as well
+                # Write the 5 seconds "before" motion to disk as well
                 stream.copy_to(writepath + 'before.h264')
                 stream.clear()
 
@@ -85,7 +85,10 @@ with picamera.PiCamera() as camera:
                     camera.wait_recording(1)
                 print('Motion stopped!')
                 camera.split_recording(stream)
-                combine_recordings(writepath, filenum)
+                vidpath = combine_recordings(writepath, filenum)
+                split_to_pics(vidpath, filenum)
+                #dont really care about the child returning. Offloads to another device and continues loop
+                subprocess.run("python3 start_jetson.py {0}".format(vidpath))
     #not really necessary but I hate the errors on exit. might change to catch specific exit keys.
     except KeyboardInterrupt:
         camera.stop_recording()

@@ -1,8 +1,8 @@
-import io, os
+import io, subprocess, os, sys
 import datetime, time
 from PIL import Image
 import picamera
-import ffmpy
+#import ffmpy
 
 
 def create_file_location(folder):
@@ -41,8 +41,12 @@ def create_base_image(camera):
 def crate_final_loc_string(path, fnum):
     ret = path + '/' + fnum + '/'
     return ret
+
 def convert_to_mp4(name, num):
-    os.system("ffmpeg -i {0} -c {1}.mp4".format(name, num))
+    output = "{0}/{1}".format(name[:-(len(str(num))+5)], num)
+    print("ffmpeg -i {0} -c {1}.mp4".format(name, output))
+    os.system("ffmpeg -i {0} -c copy {1}.mp4".format(name, output))
+    
     
 def combine_recordings(path, num):
     before = path + '/' + 'before.h264'
@@ -51,6 +55,21 @@ def combine_recordings(path, num):
     combined = path + str(num) + '.h264'
     os.system("ffmpeg -i \"{0}\" -c copy {1}".format(concat_string, combined))
     os.system('rm {0} {1}'.format(before, after))
+    print("ffmpeg -i \"{0}\" -c copy {1}".format(concat_string, combined))
     convert_to_mp4(combined, num)
+    #return is only used to create the string to pass into split_to_pics. Will eventually fix. 
+    return combined[:-(len(str(num))+5)]
+
+#path creation is so convoluted. Will eventually fix if gets annoying.
+def split_to_pics(vidpath, number):
+    made, path = make_folder(vidpath, "frames")
+    #time.sleep(1)
+    if not made:
+        print("Error creating pic folder!")
+        exit()
+    command = "ffmpeg -i {0}{1}.h264 {0}/frames/frame%05d.png".format(vidpath, str(number)) #-qscale:v 2
+    print(command)
+    os.system(command)
+    
 
 
