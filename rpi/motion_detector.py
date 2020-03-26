@@ -88,7 +88,8 @@ with picamera.PiCamera() as camera:
                 vidpath = combine_recordings(writepath, filenum)
                 split_to_pics(vidpath, filenum)
                 #dont really care about the child returning. Offloads to another device and continues loop
-                subprocess.run("python3 start_jetson.py {0}".format(vidpath))
+                jet_path = "../recordings/{0}/{1}/".format(foldername, filenum)
+                subprocess.run("python3 start_jetson.py {0} {1}".format(jet_path, sys.argv[1]))
     #not really necessary but I hate the errors on exit. might change to catch specific exit keys.
     except KeyboardInterrupt:
         camera.stop_recording()
