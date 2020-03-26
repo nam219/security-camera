@@ -8,7 +8,9 @@ from PIL import Image, ImageDraw
 import jetson.inference
 import jetson.utils
 import argparse
-import sys
+import sys, os
+
+from nano.support import *
 
 # parse the command line
 parser = argparse.ArgumentParser(description="Locate objects in an image using an object detection DNN.", 
@@ -36,16 +38,18 @@ print('Running on device: {}'.format(device))
 
 mtcnn = MTCNN(keep_all=True, device=device)
 
-path = '/home/nick/camera_server/security-camera/recordings/2020-03-22/0/pictemp/jpg/*.jpg'
-output_path = path[0:-5]
+path = opt.file_in
+output_path = opt.file_out
 #frames = [Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)) for frame in video]
 
 #display.Video('video.mp4', width=640)
 
+face_dected = False
+frame_name = calculate_number_of_frames()
 frames_tracked = []
-for i, frames in enumerate(sys.argv[500:]):
+for i, frames in enumerate(sys.argv[2:len(frames)]-1):
     frame = Image.open(frames)
-    print('\rTracking frame: {}'.format(frames[-13:]))
+    print('\rTracking frame: {}'.format(frames[-(frame_name+1):]))
 
     # Detect faces
     boxes, _ = mtcnn.detect(frame)
@@ -56,6 +60,7 @@ for i, frames in enumerate(sys.argv[500:]):
     try:
         for box in boxes:
             draw.rectangle(box.tolist(), outline=(255, 0, 0), width=6)
+        face_dected = True
     except Exception:
         print ("No face detected. Continuing to next image.")
         pass
@@ -75,8 +80,11 @@ except KeyboardInterrupt:
 #dim = frames_tracked[0].size
 #fourcc = cv2.VideoWriter_fourcc(*'FMP4')    
 #video_tracked = cv2.VideoWriter('video_tracked.mp4', fourcc, 25.0, dim)
+save_string = '{0}frame%0{1}d.png'.format(output_path, frame_name)
 for i, frame in enumerate(frames_tracked):
 #    maker = '{0}frame{1}.jpg'.format(output_path, i)
-    frame.save('./out/frame{0}.jpg'.format(i))
+    frame.save(save_string)
     #video_tracked.write(cv2.cvtColor(np.array(frame), cv2.COLOR_RGB2BGR))
 #video_tracked.release()
+
+os.system("touch {0}motion-detected")
