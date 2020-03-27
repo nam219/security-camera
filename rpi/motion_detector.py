@@ -45,6 +45,7 @@ with picamera.PiCamera() as camera:
     camera.rotation = 180
     stream = picamera.PiCameraCircularIO(camera, seconds=5)
     camera.start_recording(stream, format='h264')
+    network = sys.argv[1]
     #give camera some time to warm up
     #can be simplified but this makes it seem somethings happening.
     print('Warming up camera.')
