@@ -53,8 +53,9 @@ with picamera.PiCamera() as camera:
     print('Camera started.')
     time.sleep(1)
     try:
-        print('Beginning motion detection.')
+        
         base_image = create_base_image(camera)
+        print('Beginning motion detection.')
         while True:
             camera.wait_recording(1)    
             if detect_motion(camera, 5, base_image):
