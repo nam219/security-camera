@@ -10,7 +10,8 @@ import jetson.utils
 import argparse
 import sys, os
 
-from nano.support import *
+#from nano.support import *
+
 
 # parse the command line
 parser = argparse.ArgumentParser(description="Locate objects in an image using an object detection DNN.", 
@@ -45,11 +46,12 @@ output_path = opt.file_out
 #display.Video('video.mp4', width=640)
 
 face_dected = False
-frame_name = calculate_number_of_frames()
+#frame_name = calculate_number_of_frames()
 frames_tracked = []
-for i, frames in enumerate(sys.argv[2:len(frames)]-1):
+#length = len(sys.argv) - 1
+for i, frames in enumerate(sys.argv[2:-1]):
     frame = Image.open(frames)
-    print('\rTracking frame: {}'.format(frames[-(frame_name+1):]))
+    print('\rTracking frame: {}'.format(i))#frames[-(frame_name+1):]))
 
     # Detect faces
     boxes, _ = mtcnn.detect(frame)
@@ -63,7 +65,7 @@ for i, frames in enumerate(sys.argv[2:len(frames)]-1):
         face_dected = True
     except Exception:
         print ("No face detected. Continuing to next image.")
-        pass
+        
     # Add to frame list
     frames_tracked.append(frame_draw)
 print('\nDone')
@@ -80,11 +82,12 @@ except KeyboardInterrupt:
 #dim = frames_tracked[0].size
 #fourcc = cv2.VideoWriter_fourcc(*'FMP4')    
 #video_tracked = cv2.VideoWriter('video_tracked.mp4', fourcc, 25.0, dim)
-save_string = '{0}frame%0{1}d.png'.format(output_path, frame_name)
+#save_string = '{0}frame%0{1}d.png'.format(output_path, frame_name)
 for i, frame in enumerate(frames_tracked):
-#    maker = '{0}frame{1}.jpg'.format(output_path, i)
-    frame.save(save_string)
+    maker = '{0}frame{1}.png'.format(output_path, i)
+    frame.save(maker)
     #video_tracked.write(cv2.cvtColor(np.array(frame), cv2.COLOR_RGB2BGR))
 #video_tracked.release()
 
-os.system("touch {0}motion-detected")
+if face_dected:
+    os.system("touch {0}motion-detected".format(output_path))

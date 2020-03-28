@@ -2,16 +2,18 @@
 #import jetson.utils
 import sys, argparse, os
 from support import *
+
 #take in args from pi.
 #run network of choice using those arguments
 #if motion detected, send to me. else, delete all files (but not folders jic it gets in way)
 if __name__ == '__main__':
-	print("opened file with {0} and {1} as arguments".format(sys.argv[1], sys.argv[len(sys.argv)-1]))
-	path = "{1}frame/*.png"
+	print("opened file with {0} and {1} as arguments".format(sys.argv[1], sys.argv[-1:]))
+	path = "{}frames/*.png".format(sys.argv[1])
+	out = "{}/frames/".format(sys.argv[1])
 	#network selection isnt actually set up yet so this wont work and hopefully just goes to the else
 	network = sys.argv[1]
-	file_in = sys.argv[2:len(sys.argv)-2]
-	file_out = sys.argv[len(sys.argv)-1]
+	file_in = sys.argv[2:-2]
+	file_out = sys.argv[-1:]
 	#use face.py
 	if network == "pyface":
 		print('pyface')
@@ -45,7 +47,7 @@ if __name__ == '__main__':
 	#defaults to face.py because it is faster
 	else:
 		print('pyface -> default')
-		if run_pyface(file_in, file_out):
+		if run_pyface(path, out):
 			#run the send video script to clean up/combine files and send message
 			print("Motion Detected!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 			exit
