@@ -15,9 +15,9 @@ Software for security monitoring with single or multiple cameras with:
 
 - Run the script in the launch folder corresponding to the device to begin.
 ```Shell
-bash launchPi.sh
+./launchPi.sh
 ```
 or
 ```Shell
-bash launchJetson.sh
+./launchJetson.sh
 ```
