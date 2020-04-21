@@ -53,8 +53,9 @@ with picamera.PiCamera() as camera:
     print('Camera started.')
     time.sleep(1)
     try:
-        print('Beginning motion detection.')
+        
         base_image = create_base_image(camera)
+        print('Beginning motion detection.')
         while True:
             camera.wait_recording(1)    
             if detect_motion(camera, 5, base_image):
@@ -90,8 +91,8 @@ with picamera.PiCamera() as camera:
                 split_to_pics(vidpath, filenum)
                 #dont really care about the child returning. Offloads to another device and continues loop
                 jet_path = "../recordings/{0}/{1}/".format(foldername, filenum)
-                os.system("python3 ./start_jetson.py {0} {1}".format(jet_path, sys.argv[1]))
-                #subprocess.run("python3 start_jetson.py {0} {1}".format(jet_path, sys.argv[1]))
+                #os.system("python3 ./start_jetson.py {0} {1}".format(jet_path, sys.argv[1]))
+                subprocess.run("python3 start_jetson.py {0} {1}".format(jet_path, sys.argv[1]))
     #not really necessary but I hate the errors on exit. might change to catch specific exit keys.
     except KeyboardInterrupt:
         camera.stop_recording()
