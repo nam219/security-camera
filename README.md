@@ -1,3 +1,5 @@
+# Moved to https://github.com/nam219/home_security 
+
 # Introduction
 
 Software for security monitoring with single or multiple cameras with:
